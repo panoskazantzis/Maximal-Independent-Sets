@@ -48,28 +48,32 @@ def maximal_independent_sets(graph, strategy='min degree'):
     adj_matrix = get_adjacency_matrix(graph, np.unique(graph.flatten()))
     
     # get nodes degree
-    track_nodes = list(np.unique(graph.flatten()))
     nodes_degree = {
         track_nodes[i]: np.sum(adj_matrix, axis=1)[i]
-        for i in range(0, len(track_nodes))
+        for i in range(0, len(list(np.unique(graph.flatten()))))
     }
     # get all disconnected nodes to each node
     disconnected_nodes = {
         node: np.where(adj_matrix[node] == 0)[0]
-        for node in track_nodes
+        for node in list(np.unique(graph.flatten()))
     }
     
     max_ind_sets = {}
-    while len(nodes_degree) > 0:
+    track_nodes = []
+    while len(track_nodes) < len(nodes_degree):
+        # get starting node based on priority strategy
         # prioritize
+        sub_nodes_degree = {key: nodes_degree[key] for key in nodes_degree.keys() if key not in track_nodes}
         if strategy == 'min degree':
-            priority_node = min(nodes_degree, key=nodes_degree.get)
+            priority_node = min(sub_nodes_degree, key=sub_nodes_degree.get)
         elif strategy == 'max degree':
-            priority_node = max(nodes_degree, key=nodes_degree.get)
+            priority_node = max(sub_nodes_degree, key=sub_nodes_degree.get)
     
-        # add to set
+        # add to set - update track
         max_ind_set = [priority_node]
         max_ind_sets[priority_node] = []
+        track_nodes += [priority_node]
+        
         
         while len(max_ind_set) > 0:
             # calculate all forbiddean/connected nodes to current set
@@ -80,23 +84,24 @@ def maximal_independent_sets(graph, strategy='min degree'):
                 or any(set(max_ind_set+[node]).issubset(set(mis)) for mis in max_ind_sets[priority_node])
             ]
             # calculate all accepted/disconnected nodes to current set
-            accepted_nodes = set(np.unique(graph.flatten())) - set(bad_nodes)
+            accepted_nodes = list(set(np.unique(graph.flatten())) - set(bad_nodes))
             if len(accepted_nodes) > 0:
-                # add 1st of accpeted nodes to current set to build the MIS
-                max_ind_set += [list(accepted_nodes)[0]]
+                # add node to current set to build the MIS based on priority strategy
+                sub_nodes_degree = {key: nodes_degree[key] for key in accepted_nodes}
+                if strategy == 'min degree':
+                    max_ind_set += [min(sub_nodes_degree, key=sub_nodes_degree.get)]
+                elif strategy == 'max degree':
+                    max_ind_set += [max(sub_nodes_degree, key=sub_nodes_degree.get)]
             else:
                 # if subset of another MIS do not include
                 if not any(set(max_ind_set).issubset(set(mis)) for mis in max_ind_sets[priority_node]):
                     max_ind_sets[priority_node] += [max_ind_set]
                 # go 1 step back and search for other possible MIS
                 max_ind_set = max_ind_set[:-1]
-            
-        # go to next starting node
-        nodes_degree = {item[0]: item[1] for item in nodes_degree.items() if item[0] != priority_node}
-    
-    # remove duplicate MIS
-    max_ind_sets = [
-        list(set(mis)) for mis in list(chain.from_iterable(list(max_ind_sets.values())))
-    ]
-    
-    return list(set(map(tuple, max_ind_sets)))
+
+    # setup format - remove duplicates
+    max_ind_sets = {
+        tuple(sorted(tuple(mis))) for mis in list(chain.from_iterable(list(max_ind_sets.values())))
+    }
+
+    return max_ind_sets
