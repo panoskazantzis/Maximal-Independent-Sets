@@ -44,6 +44,30 @@ def get_adjacency_matrix(graph, nodes):
 
 
 def maximal_independent_sets(graph, strategy='min degree'):
+    """
+    Find all maximal independent sets (MIS) in a graph.
+
+    Finds all the maximal independent sets of a given graph.
+    A maximal independent set is a set of a graph's nodes such that 
+    no two nodes in the set are connected directly with an edge 
+    and the set is no subset of another maximal independent set.
+
+    Parameters
+    ----------
+    graph : np.array
+        np.array representing the edges of a graph.
+    strategy : str, optional
+        String to denote the node selection strategy to be used.
+        Two values are accepted, 'min degree' to give priority to 
+        nodes with less edges or 'max degree' to give priority to 
+        nodes with more edges. Default is set to 'min degree'.
+
+    Returns
+    -------
+    max_ind_sets : set of tuples
+        Set containing tuples with all maximal independent sets (MIS) in the graph.
+
+    """
     # calculate adjacency matrix
     adj_matrix = get_adjacency_matrix(graph, np.unique(graph.flatten()))
 
